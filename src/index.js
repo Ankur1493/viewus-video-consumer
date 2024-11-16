@@ -69,8 +69,10 @@ async function init() {
             bucket,
             object: { key },
           } = s3
+          const decodedKey = decodeURIComponent(key);
+          console.log({ decodedKey })
 
-          await processVideo({ bucketName: bucket.name, key })
+          await processVideo({ bucketName: bucket.name, key: decodedKey })
           //delete the event from queue
           const deleteCommand = new DeleteMessageCommand({
             QueueUrl: "https://sqs.ap-south-1.amazonaws.com/339712935294/viewusVideoFetchingQueue",
@@ -78,7 +80,7 @@ async function init() {
           });
           const deleteS3videoCommand = new DeleteObjectCommand({
             Bucket: "temp-videos-viewus.in",
-            Key: key,
+            Key: decodedKey,
           });
           await client.send(deleteCommand)
           console.log(`${key} message deleted from queue`)
@@ -91,7 +93,8 @@ async function init() {
         isProcessing = false; // Reset flag
       }
     } catch (err) {
-      console.log(err)
+      console.error("Error handling SQS messages:", err);
+      isProcessing = false; // Reset flag in case of an error
     }
   }
 }
